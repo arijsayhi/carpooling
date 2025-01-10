@@ -336,7 +336,7 @@ def search_ride():
     # Render search ride template
     return render_template('search_ride.html')
 
-
+# Route for creating a new ride
 @app.route('/create_ride', methods=['GET', 'POST'])
 def create_ride():
     """Handle ride creation."""
@@ -434,7 +434,7 @@ def create_ride():
     
     return render_template('create_ride.html')
 
-
+# Route for fetching all users
 @app.route('/users', methods=['GET'])
 def get_all_users():
     """Fetch all user information from the database."""
@@ -455,7 +455,6 @@ def get_all_users():
         logger.error(f"Error fetching users: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Failed to retrieve users.'}), 500
 
-
 @app.before_first_request
 def create_database():
     """Ensure the database is created before handling any requests."""
@@ -463,7 +462,7 @@ def create_database():
     if not os.path.exists(db_path):
         db.create_all()
 
-
+#route for fetching all rides
 @app.route('/rides', methods=['GET'])
 def get_all_rides():
     """Fetch all rides."""
@@ -497,7 +496,7 @@ def get_all_rides():
         logger.error(f"Error fetching rides: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Failed to retrieve rides.'}), 500
 
-
+#Route for fetching a specific ride by ID
 @app.route('/rides/<int:ride_id>', methods=['GET'])
 def get_ride(ride_id):
     """Fetch a specific ride."""
@@ -533,15 +532,20 @@ def get_ride(ride_id):
         logger.error(f"Error fetching ride: {str(e)}")
         return jsonify({'status': 'error', 'message': 'Failed to retrieve ride.'}), 500
 
-
+#Route for satisfaction form
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """Handle satisfaction form submission."""
     
     if request.method == 'POST':
-        # Get form data
-        rating = request.form.get('rating')  # Rating is optional
-        comments = request.form.get('comments')  # Comments are optional
+        # For Insomnia or Browser form submission, handle form data
+        if request.is_json:  # Insomnia or any API client sending JSON data
+            data = request.get_json()  # Get JSON data
+            rating = data.get('rating')  # Rating is optional
+            comments = data.get('comments')  # Comments are optional
+        else:  # Browser form submission
+            rating = request.form.get('rating')  # Rating from form
+            comments = request.form.get('comments')  # Comments from form
         
         # Create a new Satisfaction object with optional fields
         satisfaction_entry = Satisfaction(rating=rating if rating else None, comments=comments if comments else None)
@@ -550,13 +554,42 @@ def index():
         db.session.add(satisfaction_entry)
         db.session.commit()
         
-        # Redirect or send a success message
-        return redirect(url_for('index'))  # You can redirect to a success page or show a message
+        # Handle the response
+        if request.is_json:
+            return jsonify({'status': 'success', 'message': 'Satisfaction submitted successfully!'}), 200
+        else:
+            # Redirect or show a message for the browser
+            return redirect(url_for('index'))  # Redirect back to the form or to a success page
     
-    return render_template('index.html')  # Ensure index.html has the form as part of it
+    # For GET requests, render the form for browsers
+    return render_template('index.html')  # Ensure 'index.html' contains the form
 
+#route for fetching all satisfaction entries
+@app.route('/satisfaction', methods=['GET'])
+def get_all_satisfaction_entries():
+    """Fetch all satisfaction entries."""
+    try:
+        satisfaction_entries = Satisfaction.query.all()
 
-@app.route('/matching')
+        # Check if the table has data
+        if not satisfaction_entries:
+            return jsonify({'status': 'success', 'message': 'No satisfaction entries found.'}), 200
+
+        # Convert entries to a list of dictionaries
+        satisfaction_data = [{
+            'id': entry.id,
+            'rating': entry.rating,
+            'comments': entry.comments
+        } for entry in satisfaction_entries]
+
+        return jsonify({'status': 'success', 'satisfaction_entries': satisfaction_data}), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching satisfaction entries: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'Failed to retrieve satisfaction entries.'}), 500
+
+#route for matching passengers with available rides
+@app.route('/matching', methods=['GET'])
 def matching():
     """Match passengers with available rides."""
     
@@ -595,6 +628,17 @@ def matching():
     
     # Execute the query
     matching_rides = matching_rides.all()
+ 
+ # If no matching rides are found, handle response for Insomnia
+    if not matching_rides:
+        if 'application/json' in request.headers.get('Accept', ''):
+            return jsonify({
+                'status': 'error',
+                'message': 'No matching rides found.'
+            })
+        else:
+            flash('No matching rides found.')
+            return render_template('matching.html', matches=[], search_criteria=current_passenger)
     
     # Get driver information for each ride
     rides_with_drivers = []
@@ -605,13 +649,361 @@ def matching():
             'driver': driver
         })
     
-    return render_template(
-        'matching.html',
-        matches=rides_with_drivers,
-        search_criteria=current_passenger,
-    )
+    # Check if the request is coming from a browser or an API client (Insomnia)
+    if 'application/json' in request.headers.get('Accept', ''):
+        # Return JSON response for API clients (e.g., Insomnia)
+        return jsonify({
+            'status': 'success',
+            'matches': [
+                {
+                    'ride_id': ride['ride'].id,
+                    'destination': ride['ride'].destination,
+                    'departure_time': ride['ride'].departure_time,
+                    'driver': {
+                        'driver_id': ride['driver'].id,
+                        'name': ride['driver'].name,
+                        'gender': ride['driver'].gender  # Example, include other relevant fields
+                    }
+                }
+                for ride in rides_with_drivers
+            ],
+            'search_criteria': {
+                'destination': current_passenger.destination,
+                'departure_time': current_passenger.departure_time,
+                'preferred_gender': current_passenger.preferred_gender,
+                'smoking_preference': current_passenger.smoking_preference,
+                'pets_allowed': current_passenger.pets_allowed,
+                'children_allowed': current_passenger.children_allowed
+            }
+        })
+    else:
+        # For browsers, render the HTML template
+        return render_template(
+            'matching.html',
+            matches=rides_with_drivers,
+            search_criteria=current_passenger,
+        )
+#route for deleting a ride by ID
+@app.route('/delete_ride/<int:ride_id>', methods=['DELETE'])
+def delete_ride(ride_id):
+    """Delete a ride based on its ID."""
+    # Find the ride by ID
+    ride = Ride.query.get(ride_id)
 
+    if not ride:
+        return jsonify({
+            'status': 'error',
+            'message': f'Ride with ID {ride_id} not found.'
+        }), 404
 
+    # Check if the user is authorized to delete this ride (e.g., ride owner)
+    if ride.creator_id != session.get('user_id'):
+        return jsonify({
+            'status': 'error',
+            'message': 'Unauthorized to delete this ride.'
+        }), 403
+
+    try:
+        # Delete the ride
+        db.session.delete(ride)
+        db.session.commit()
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Ride with ID {ride_id} has been deleted successfully.'
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred while deleting the ride.',
+            'details': str(e)
+        }), 500
+
+#route for deleting a satisfaction form by ID
+@app.route('/delete_satisfaction_form/<int:form_id>', methods=['DELETE'])
+def delete_satisfaction_form(form_id):
+    """
+    Deletes a satisfaction form by ID.
+    This endpoint is intended for API clients like Insomnia.
+    """
+    # Fetch the satisfaction form by ID
+    form = Satisfaction.query.get(form_id)
+    
+    if not form:
+        # Return error response if the form is not found
+        return jsonify({
+            'status': 'error',
+            'message': f'Satisfaction form with ID {form_id} not found.'
+        }), 404
+    
+    try:
+        # Delete the form from the database
+        db.session.delete(form)
+        db.session.commit()
+        
+        # Return a success response
+        return jsonify({
+            'status': 'success',
+            'message': f'Satisfaction form with ID {form_id} has been deleted.'
+        }), 200
+    except Exception as e:
+        # Handle any unexpected errors
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred while trying to delete the satisfaction form.',
+            'details': str(e)
+        }), 500
+        
+#route for deleting a passenger by ID
+@app.route('/delete_passenger/<int:passenger_id>', methods=['DELETE'])
+def delete_passenger(passenger_id):
+    """
+    Deletes a passenger by ID.
+    This endpoint is intended for API clients like Insomnia.
+    """
+    # Fetch the passenger record by ID
+    passenger = Passenger.query.get(passenger_id)
+    
+    if not passenger:
+        # Return error response if the passenger is not found
+        return jsonify({
+            'status': 'error',
+            'message': f'Passenger with ID {passenger_id} not found.'
+        }), 404
+    
+    try:
+        # Delete the passenger from the database
+        db.session.delete(passenger)
+        db.session.commit()
+        
+        # Return a success response
+        return jsonify({
+            'status': 'success',
+            'message': f'Passenger with ID {passenger_id} has been deleted.'
+        }), 200
+    except Exception as e:
+        # Handle unexpected errors
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred while trying to delete the passenger.',
+            'details': str(e)
+        }), 500
+
+#route for deleting a user by ID
+@app.route('/delete_user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    """Delete a user and associated rides and passengers."""
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({
+            'status': 'error',
+            'message': 'User not found.'
+        }), 404
+
+    try:
+        # Delete associated rides
+        Ride.query.filter_by(creator_id=user_id).delete()
+
+        # Delete associated passengers
+        Passenger.query.filter_by(creator_id=user_id).delete()
+
+        # Delete the user
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'User and associated rides and passengers deleted successfully.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred while trying to delete the user.',
+            'details': str(e)
+        }), 500
+    
+#route for getting a passenger by ID    
+@app.route('/get_passenger/<int:passenger_id>', methods=['GET'])
+def get_passenger(passenger_id):
+    """Retrieve a passenger by ID."""
+    passenger = Passenger.query.get(passenger_id)
+    if not passenger:
+        return jsonify({
+            'status': 'error',
+            'message': 'Passenger not found.'
+        }), 404
+
+    return jsonify({
+        'status': 'success',
+        'passenger': {
+            'id': passenger.id,
+            'creator_id': passenger.creator_id,
+            'destination': passenger.destination,
+            'departure_time': passenger.departure_time,
+            'preferred_gender': passenger.preferred_gender,
+            'smoking_preference': passenger.smoking_preference,
+            'pets_allowed': passenger.pets_allowed,
+            'children_allowed': passenger.children_allowed,
+            'trip_type': passenger.trip_type,
+            'return_destination': passenger.return_destination,
+            'return_time': passenger.return_time,
+            'created_at': passenger.created_at,
+            'updated_at': passenger.updated_at
+        }
+    })
+
+#route for updating a passenger by ID
+@app.route('/update_search/<int:passenger_id>', methods=['PUT'])
+def update_search(passenger_id):
+    """Update a specific passenger's search for a ride by ID."""
+    
+    # Find the passenger by ID
+    passenger_to_update = Passenger.query.get(passenger_id)
+    
+    if not passenger_to_update:
+        return jsonify({
+            'status': 'error',
+            'message': 'Passenger not found.'
+        }), 404
+    
+    # Get the data from the request body
+    data = request.get_json()
+    
+    # Convert date strings to datetime objects
+    if 'departure_time' in data:
+        data['departure_time'] = datetime.fromisoformat(data['departure_time'])
+    if 'return_time' in data:
+        data['return_time'] = datetime.fromisoformat(data['return_time'])
+
+    # Update the passenger search criteria with the new data
+    passenger_to_update.destination = data.get('destination', passenger_to_update.destination)
+    passenger_to_update.departure_time = data.get('departure_time', passenger_to_update.departure_time)
+    passenger_to_update.preferred_gender = data.get('preferred_gender', passenger_to_update.preferred_gender)
+    passenger_to_update.smoking_preference = data.get('smoking_preference', passenger_to_update.smoking_preference)
+    passenger_to_update.pets_allowed = data.get('pets_allowed', passenger_to_update.pets_allowed)
+    passenger_to_update.children_allowed = data.get('children_allowed', passenger_to_update.children_allowed)
+    passenger_to_update.return_time = data.get('return_time', passenger_to_update.return_time)
+    passenger_to_update.return_destination = data.get('return_destination', passenger_to_update.return_destination)
+    
+    # Commit the changes to the database
+    db.session.commit()
+    
+    # Return a success response with the updated search details
+    return jsonify({
+        'status': 'success',
+        'message': 'Search updated successfully.',
+        'updated_search': {
+            'destination': passenger_to_update.destination,
+            'departure_time': passenger_to_update.departure_time,
+            'preferred_gender': passenger_to_update.preferred_gender,
+            'smoking_preference': passenger_to_update.smoking_preference,
+            'pets_allowed': passenger_to_update.pets_allowed,
+            'children_allowed': passenger_to_update.children_allowed,
+            'return_time': passenger_to_update.return_time,
+            'return_destination': passenger_to_update.return_destination
+        }
+    })
+
+#route for updating a ride by ID
+@app.route('/update_ride/<int:ride_id>', methods=['PATCH'])
+def update_ride_partial(ride_id):
+    """Update specific details of an existing ride (partial update)."""
+    
+    # Get the data from the request body (JSON)
+    data = request.get_json()
+
+    # Find the ride to update by ride_id
+    ride_to_update = Ride.query.get(ride_id)
+    
+    if not ride_to_update:
+        return jsonify({
+            'status': 'error',
+            'message': 'Ride not found.'
+        }), 404
+
+    # Debugging: Print the creator_id and session user_id for debugging
+    print(f"Ride Creator ID: {ride_to_update.creator_id}")
+    print(f"Session User ID: {session.get('user_id')}")
+
+    # Only update the fields provided in the request
+    if 'destination' in data:
+        ride_to_update.destination = data['destination']
+    if 'departure_time' in data:
+        ride_to_update.departure_time = datetime.fromisoformat(data['departure_time'])
+    if 'preferred_gender' in data:
+        ride_to_update.preferred_gender = data['preferred_gender']
+    if 'smoking_preference' in data:
+        ride_to_update.smoking_preference = data['smoking_preference']
+    if 'pets_allowed' in data:
+        ride_to_update.pets_allowed = data['pets_allowed']
+    if 'children_allowed' in data:
+        ride_to_update.children_allowed = data['children_allowed']
+    if 'return_time' in data:
+        ride_to_update.return_time = datetime.fromisoformat(data['return_time'])
+    if 'return_destination' in data:
+        ride_to_update.return_destination = data['return_destination']
+    if 'trip_type' in data:
+        ride_to_update.trip_type = data['trip_type']
+
+    # Update the timestamp for the last update
+    ride_to_update.updated_at = datetime.utcnow()
+
+    # Commit the changes to the database
+    db.session.commit()
+
+    # Return a success response with the updated ride details
+    return jsonify({
+        'status': 'success',
+        'message': 'Ride updated successfully.',
+        'updated_ride': {
+            'ride_id': ride_to_update.id,
+            'destination': ride_to_update.destination,
+            'departure_time': ride_to_update.departure_time,
+            'preferred_gender': ride_to_update.preferred_gender,
+            'smoking_preference': ride_to_update.smoking_preference,
+            'pets_allowed': ride_to_update.pets_allowed,
+            'children_allowed': ride_to_update.children_allowed,
+            'return_time': ride_to_update.return_time,
+            'return_destination': ride_to_update.return_destination,
+            'trip_type': ride_to_update.trip_type,
+            'updated_at': ride_to_update.updated_at
+        }
+    })
+
+#route for counting the number of rides
+@app.route('/rides/count', methods=['HEAD'])
+def count_rides():
+    """Count how many rides are in the database."""
+    ride_count = Ride.query.count()
+    print(f"Number of rides: {ride_count}")  # Debugging line
+
+    # Return an empty response body with the custom header
+    return '', 200, {'Total-Rides': str(ride_count)}
+
+#route for counting the number of passengers
+@app.route('/rides/passengers/count', methods=['HEAD'])
+def count_passengers():
+    """Count the number of passengers across all rides."""
+    passenger_count = db.session.query(Passenger).count()
+    return '', 200, {'Total-Passengers': str(passenger_count)
+    }
+
+#route for counting the number of users
+@app.route('/users/count', methods=['HEAD'])
+def count_users():
+    """Count the number of users in the database."""
+    # Assuming 'User' is your model storing the users
+    user_count = db.session.query(User).count()
+
+    # Print for debugging purposes
+    print(f"Total Users: {user_count}")
+
+    # Return an empty response body with the custom header
+    return '', 200, {'Total-Users': str(user_count)}
+
+    
 if __name__ == '__main__':
     with app.app_context():
         # Ensure database is initialized
