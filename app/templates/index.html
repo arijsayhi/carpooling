@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Pooling Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 5%;
+    background: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo img {
+    height: 60px;
+    width: auto;
+    margin-right: 15px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #0066cc;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.7rem 1.8rem;
+    border-radius: 25px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.btn-login {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+}
+
+.btn-login:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-signup {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-signup:hover {
+    background: #0052a3;
+}
+
+.hero {
+    height: 100vh;
+    background-image: url("{{ url_for('static', filename='img/driver.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.hero-content {
+    position: relative;
+    padding: 0 5%;
+    color: white;
+    max-width: 600px;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    line-height: 1.6;
+}
+
+.section {
+    padding: 6rem 5%;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: #333;
+}
+
+.who-we-are {
+    background: #f9f9f9;
+}
+
+.who-we-are-content {
+    display: flex;
+    gap: 4rem;
+    align-items: center;
+}
+
+.who-we-are-text {
+    flex: 1;
+}
+
+.who-we-are-image {
+    flex: 1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.who-we-are-image img {
+    width: 100%;
+    height: auto;
+}
+
+.achievements {
+    background: #fff;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    text-align: center;
+}
+
+.achievement-card {
+    padding: 2rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+
+.achievement-card:hover {
+    transform: translateY(-10px);
+}
+
+.achievement-icon {
+    font-size: 2.5rem;
+    color: #0066cc;
+    margin-bottom: 1rem;
+}
+
+.achievement-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.video-section {
+    background: #fff;
+    text-align: center;
+    padding: 6rem 5%;
+}
+
+.video-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.video-container iframe {
+    width: 100%;
+    height: 450px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.special {
+    background: #f9f9f9;
+    padding: 6rem 5%;
+}
+
+.special-container {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    margin-top: 3rem;
+}
+
+.special-item {
+    position: relative;
+    width: 400px;
+}
+
+.special-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.special-image-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.special-image {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 15px;
+    transition: transform 0.3s ease;
+}
+
+.special-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: #0066cc;
+    transition: width 0.3s ease;
+}
+
+.special-text {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-top: 1.5rem;
+    color: #333;
+}
+
+.special-item:hover .special-image {
+    transform: scale(1.05);
+}
+
+.special-item:hover .special-line {
+    width: 100%;
+}
+
+/* Contact and Satisfaction Form Styling */
+.contact,
+.satisfaction-form {
+    background-color: #f9f9f9;
+    padding: 6rem 5%;
+    color: #333;
+}
+
+.contact-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.contact-form {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.contact-info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.contact-form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.contact-form label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.contact-form .btn-signup {
+    margin-top: 20px;
+    width: auto;
+    min-width: 150px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.contact-icon i {
+    font-size: 1.5rem;
+    color: #0066cc;
+}
+
+.social-links {
+    margin-top: 30px;
+}
+
+.social-link i {
+    font-size: 1.5rem;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.social-link:hover i {
+    color: #0066cc;
+}
+
+/* Media Queries */
+@media (max-width: 968px) {
+    .special-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 3rem;
+    }
+
+    .special-item {
+        width: 100%;
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .who-we-are-content {
+        flex-direction: column;
+    }
+
+    .achievements-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .video-container iframe {
+        height: 250px;
+    }
+
+    .contact-info {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .contact-info-item {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">
+            <img src="{{ url_for('static', filename='img/CarLogo.png') }}" alt="Car Pooling Logo">
+        </a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="#who-we-are">Who We Are</a>
+            <a href="#video">Video</a>
+            <a href="#special">What Makes Us Special</a>
+        </div>
+        <div class="auth-buttons">
+            <button onclick="window.location.href='/login';" class="btn btn-login">Login</button>
+            <button onclick="window.location.href='/signup';" class="btn btn-signup">Sign up</button>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Car Pooling Platform</h1>
+            <p class="hero-subtitle">Join thousands of people who are making travel more sustainable and affordable</p>
+        </div>
+    </main>
+
+    <section id="who-we-are" class="section who-we-are">
+        <h2 class="section-title">Who We Are</h2>
+        <div class="who-we-are-content">
+            <div class="who-we-are-text">
+                <p>We are a community-driven platform dedicated to making transportation more accessible, sustainable, and affordable for everyone. Our mission is to connect drivers with empty seats to passengers heading the same way.</p>
+                <br>
+                <p>Founded in 2024, we've grown from a small local initiative to a nationwide network of trusted drivers and passengers, all working together to reduce traffic congestion and carbon emissions while building meaningful connections.</p>
+            </div>
+            <div class="who-we-are-image">
+                <img src="{{ url_for('static', filename='img/LogoCar.png') }}" alt="Car pooling community">
+            </div>
+        </div>
+    </section>
+
+    <section class="section achievements">
+        <h2 class="section-title">Our Achievements</h2>
+        <div class="achievements-grid">
+            <div class="achievement-card">
+                <i class="fas fa-users achievement-icon"></i>
+                <div class="achievement-number">100K+</div>
+                <p>Active Users</p>
+            </div>
+            <div class="achievement-card">
+                <i class="fas fa-route achievement-icon"></i>
+                <div class="achievement-number">500K+</div>
+                <p>Trips Completed</p>
+            </div>
+            <div class="achievement-card">
+                <i class="fas fa-tree achievement-icon"></i>
+                <div class="achievement-number">50K+</div>
+                <p>CO₂ Saved (tons)</p>
+            </div>
+            <div class="achievement-card">
+                <i class="fas fa-star achievement-icon"></i>
+                <div class="achievement-number">4.8</div>
+                <p>Average Rating</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="video" class="video-section">
+        <h2 class="section-title">Do you want to know more about Car Pooling?</h2>
+        <div class="video-container">
+            <iframe 
+                src="https://www.youtube.com/embed/Sh6WSdp10TU" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+        </div>
+    </section>
+
+    <section id="special" class="special">
+        <h2 class="section-title">What Makes Us Special</h2>
+        <div class="special-container">
+            <div class="special-item">
+                <a href="/Delivery.html" class="special-link">
+                    <div class="special-image-container">
+                        <img src="{{ url_for('static', filename='img/delivery.jpeg') }}" alt="Delivery " class="special-image">
+                        <div class="special-line"></div>
+                        <div class="special-text">Delivery</div>
+                    </div>
+                </a>
+            </div>
+            <div class="special-item">
+                <a href="/company-contracts.html" class="special-link">
+                    <div class="special-image-container">
+                        <img src="{{ url_for('static', filename='img/company.jpg') }}" alt="Company Contracts" class="special-image">
+                        <div class="special-line"></div>
+                        <div class="special-text">Company Contracts</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="satisfaction-form" class="section contact">
+        <h2 class="section-title">Your Feedback Matters</h2>
+        <p>Please take a moment to share your thoughts with us. Your feedback helps us improve our platform and services.</p>
+        <form action="{{ url_for('index') }}" method="POST" class="contact-form">
+            <div class="contact-container">
+                <div class="contact-info">
+                    <div class="contact-info-item">
+                        <label for="rating">Rating</label>
+                        <select id="rating" name="rating">
+                            <option value="1">1 - Poor</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="3">3 - Good</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+                    <div class="contact-info-item">
+                        <label for="comments">Comments</label>
+                        <textarea id="comments" name="comments" placeholder="Share your experience..." rows="4" ></textarea>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-signup">Submit Feedback</button>
+        </form>
+    </section>
+
+
+    <section class="contact">
+        <h2 class="section-title">Contact Us</h2>
+        <div class="contact-container">
+            <div class="contact-info">
+                <div class="contact-info-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <div>
+                        <h3>Phone</h3>
+                        <p>+1 234 567 890</p>
+                    </div>
+                </div>
+                <div class="contact-info-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div>
+                        <h3>Email</h3>
+                        <p>support@carpoolingplatform.com</p>
+                    </div>
+                </div>
+                <div class="contact-info-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div>
+                        <h3>Location</h3>
+                        <p>123 Main Street, City, Country</p>
+                    </div>
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p style="text-align: center; padding: 1rem; background: #333; color: white;">© 2025 Car Pooling Platform. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>

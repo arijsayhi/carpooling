@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+   
+    <!-- Import Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+
+    <style>
+        /* General Styling */
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #f4f4f4;
+            overflow-x: hidden;
+        }
+
+
+        /* Header Styling */
+        header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: linear-gradient(90deg, #007BFF, #0056b3);
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+            border-radius: 0 0 50px 50px;
+        }
+
+
+        /* Navigation Bar Styling */
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid transparent;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+
+        nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid white;
+        }
+
+
+        /* Main Content Styling */
+        main {
+            text-align: center;
+            padding: 2rem;
+        }
+
+
+        main h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+
+        main p {
+            font-size: 1.3rem;
+            margin-bottom: 3rem;
+        }
+
+
+        /* Info Box Styling */
+        .info-box {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 2rem auto;
+            padding: 2rem;
+            max-width: 500px;
+            border-radius: 15px;
+            box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+
+        .info-box:hover {
+            transform: translateY(-10px);
+            box-shadow: 0px 12px 20px rgba(0, 0, 0, 0.5);
+        }
+
+
+        .info-box h3 {
+            font-size: 2rem;
+            color: #ffdd57;
+            margin-bottom: 0.5rem;
+        }
+
+
+        .info-box p {
+            font-size: 1.5rem;
+            color: white;
+        }
+
+
+        .highlight {
+            font-weight: bold;
+            color: #ffdd57;
+            text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+
+        /* Footer Styling */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-size: 0.9rem;
+            box-shadow: 0px -4px 10px rgba(0, 0, 0, 0.3);
+            margin-top: 2rem;
+        }
+
+
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+
+            nav a {
+                margin: 0.5rem 0;
+            }
+
+
+            main h2 {
+                font-size: 2rem;
+            }
+
+
+            .info-box {
+                padding: 1.5rem;
+                max-width: 90%;
+            }
+
+
+            footer {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Your Dashboard</h1>
+    </header>
+
+
+    <nav>
+        <a href="{{ url_for('create_ride') }}">Create a Ride</a>
+        <a href="{{ url_for('search_ride') }}">Search for Rides</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+
+
+    <main>
+        <h2>Hello, {{ username }}!</h2>
+        <p>You are successfully logged in.</p>
+        
+        <div class="info-box">
+            <h3> You want to offer a ride ? </h3>
+            <p>You have offered <span class="highlight" id="offered-rides-count">{{ offered_rides_count }}</span> ride(s).</p>
+        </div>
+        
+        <div class="info-box">
+            <h3>Searching for a Ride ? </h3>
+            <p>You have <span class="highlight" id="joined-rides-count">{{ joined_rides_count }}</span> ride(s) search.</p>
+        </div>
+    </main>
+
+
+    <footer>
+        <p>&copy; 2024 Car Pooling App. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>

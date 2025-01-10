@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Matching Rides</title>
+    <style>
+
+.alert-success button {
+    background: #28a745;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    margin-top: 1rem;
+}
+
+.alert-success button:hover {
+    background: #218838;
+    transform: scale(1.05);
+}
+        /* General Styling */
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #f4f4f4;
+            overflow-x: hidden;
+        }
+
+
+        /* Header Styling */
+        header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: linear-gradient(90deg, #007BFF, #0056b3);
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+            border-radius: 0 0 50px 50px;
+        }
+
+
+        /* Navigation Bar Styling */
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid transparent;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+
+        nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid white;
+        }
+
+
+        /* Main Content Styling */
+        main {
+            text-align: center;
+            padding: 2rem;
+        }
+
+
+        main h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+
+        main p {
+            font-size: 1.3rem;
+            margin-bottom: 3rem;
+        }
+
+
+        /* Card Styling */
+        .card {
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0px 12px 20px rgba(0, 0, 0, 0.5);
+        }
+
+
+        .card-body {
+            padding: 2rem;
+        }
+
+
+        .card-title {
+            font-size: 2rem;
+            color: #ffdd57;
+            margin-bottom: 0.5rem;
+        }
+
+
+        .card p {
+            font-size: 1.5rem;
+            color: white;
+        }
+
+
+        .btn-primary {
+            background: #007BFF;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+
+        /* Success section styling */
+        .alert-success {
+            background-color: #28a745;
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+            display: none;
+            margin-top: 2rem;
+        }
+        
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Available Matching Rides</h1>
+    </header>
+
+    <nav>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('create_ride') }}">Create a Ride</a>
+        <a href="{{ url_for('search_ride') }}">Search for Rides</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+
+    <main>
+        <!-- Search Criteria Summary -->
+        <div class="search-criteria mb-4">
+            <h4>Your Search Criteria:</h4>
+            <p>From: {{ search_criteria.departure }}</p>
+            <p>To: {{ search_criteria.destination }}</p>
+            <p>Departure Time: {{ search_criteria.departure_time.strftime('%Y-%m-%d %H:%M') }}</p>
+            {% if search_criteria.trip_type == 'two-way' %}
+                <p>Return Time: {{ search_criteria.return_time.strftime('%Y-%m-%d %H:%M') }}</p>
+            {% endif %}
+        </div>
+
+        {% if matches %}
+            <div class="matching-rides">
+                {% for match in matches %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Ride to {{ match.ride.destination }}</h5>
+                        <div class="driver-info">
+                            <h6>Driver: {{ match.driver.fullname }}</h6>
+                            <p>Car: {{ match.ride.car_type }} - {{ match.ride.car_name }}</p>
+                            <p>Available Seats: {{ match.ride.seats }}</p>
+                        </div>
+                        <div class="ride-details">
+                            <p>Departure: {{ match.ride.departure_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                            {% if match.ride.trip_type == 'two-way' %}
+                                <p>Return: {{ match.ride.return_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="preferences">
+                            <p>Gender Preference: {{ match.ride.preferred_gender }}</p>
+                            <p>Music: {{ match.ride.preferred_music }}</p>
+                            <p>Smoking: {{ match.ride.smoking_preference }}</p>
+                            <p>Pets Allowed: {{ match.ride.pets_allowed }}</p>
+                            <p>Children Allowed: {{ match.ride.children_allowed }}</p>
+                            <p>Air Conditioning: {{ match.ride.air_conditioning }}</p>
+                        </div>
+                        <button class="btn btn-primary" 
+    onclick="showSuccessSection('{{ match.driver.phone }}', '{{ match.ride.departure_coordinates }}', '{{ match.ride.destination_coordinates }}', '{{ match.distance }}')">
+    Request Ride
+</button>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No matching rides found at this time. Please try adjusting your search criteria.
+            </div>
+        {% endif %}
+
+        <!-- Success Section -->
+<div id="success-section" class="alert alert-success mt-4" style="display:none;">
+    <h5>Matching Successfully Done!</h5>
+    <p>Driver's Phone Number: <span id="driver-phone"></span></p>
+    <p>Passenger's Departure Coordinates: <span id="passenger-departure"></span></p>
+    <p>Passenger's Destination Coordinates: <span id="passenger-destination"></span></p>
+    <p>Distance Between Locations: <span id="passenger-distance"></span> km</p>
+    <p> please after you call the Rider press on Finished Button </p>
+    <!-- Add the Finished button -->
+    <button class="btn btn-success mt-3" onclick="finishAndRedirect()">Finished</button>
+</div>
+
+</div>
+
+    </main>
+    <script>    
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+        
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the Earth in km
+            const dLat = toRadians(lat2 - lat1);
+            const dLon = toRadians(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in km
+        }
+        
+        function showSuccessSection(driverPhone, departureCoordinates, destinationCoordinates) {
+            document.getElementById('success-section').style.display = 'block';
+            document.getElementById('driver-phone').textContent = driverPhone;
+        
+            // Split coordinates into latitude and longitude
+            const [depLat, depLon] = departureCoordinates.split(',');
+            const [destLat, destLon] = destinationCoordinates.split(',');
+        
+            // Calculate the distance between the two points
+            const distance = haversineDistance(parseFloat(depLat), parseFloat(depLon), parseFloat(destLat), parseFloat(destLon));
+        
+            // Calculate carpool price: distance * 0.36 TND
+            const price = (distance * 0.36).toFixed(0.36);
+        
+            // Update the passenger departure, destination, calculated distance, and price
+            document.getElementById('passenger-departure').textContent = departureCoordinates;
+            document.getElementById('passenger-destination').textContent = destinationCoordinates;
+            document.getElementById('passenger-distance').textContent = distance.toFixed(2);
+            
+            // Display the carpool price
+            const priceParagraph = document.createElement("p");
+            priceParagraph.textContent = "Carpool Price: " + price + " TND";
+            document.getElementById('success-section').appendChild(priceParagraph);
+        
+            // Scroll to success section
+            document.getElementById('success-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function finishAndRedirect() {
+            window.location.href = "{{ url_for('dashboard') }}";
+        }
+
+
+    </script>    
+        
+</body>
+</html>

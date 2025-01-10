@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search for a Ride</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+/* Base Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header Styles */
+header {
+    background-color: #2a9d8f;
+    padding: 20px 0;
+    text-align: center;
+    color: white;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Form Container */
+.form-container {
+    width: 70%;
+    margin: 30px auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Inputs */
+label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: inline-block;
+}
+
+input[type="text"],
+input[type="datetime-local"],
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d8e1;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="datetime-local"]:focus,
+select:focus {
+    border-color: #2a9d8f;
+    outline: none;
+}
+
+/* Search Suggestions Box */
+.suggestions {
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    width: 100%;
+    z-index: 100;
+    display: none;
+}
+
+.suggestions div {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestions div:hover {
+    background-color: #f1f1f1;
+}
+
+/* Map Container */
+.map-container {
+    height: 300px;
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Button Styles */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2a9d8f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #1f7b6d;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .form-container {
+        width: 90%;
+    }
+
+    header h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-container {
+        width: 100%;
+        padding: 20px;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+}
+
+/* Preferences Section */
+.preferences {
+        margin: 2rem 0;
+    }
+
+    select {
+        background-color: #ffffff;
+        color: #000000;
+        border: 1px solid #ffffff;
+        font-size: 1rem;
+    }
+
+    select:focus {
+        border-color: #3498db;
+    }
+
+    /* Error Message */
+    .error-message {
+        color: red;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Search for a Ride</h1>
+    </header>
+
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('search_ride') }}" id="search-ride-form">
+
+            <!-- Departure Section -->
+            <label for="departure-search">Departure Location*</label>
+            <div style="position: relative;">
+                <input type="text" id="departure-search" name="departure-search" placeholder="Search for Departure" required>
+                <div class="suggestions" id="departure-suggestions"></div>
+            </div>
+            <div id="departure-map" class="map-container"></div>
+            <input type="hidden" id="departure" name="departure" required>
+            
+
+            <!-- Destination Section -->
+            <label for="destination-search">Destination Location*</label>
+            <div style="position: relative;">
+                <input type="text" id="destination-search" name="destination-search" placeholder="Search for Destination" required>
+                <div class="suggestions" id="destination-suggestions"></div>
+            </div>
+            <div id="destination-map" class="map-container"></div>
+            <input type="hidden" id="destination" name="destination" required>
+
+            <!-- Date and Time Section -->
+            <label for="departure-time">Departure Time*</label>
+            <input type="datetime-local" id="departure-time" name="departure-time" required>
+
+            <!-- Trip Type Section -->
+            <label for="trip-type">Trip Type*</label>
+            <select id="trip-type" name="trip-type" required>
+                <option value="one-way">One-way</option>
+                <option value="two-way">Round-trip</option>
+            </select>
+
+            <!-- Return Trip Section -->
+            <div id="return-trip-container" style="display: none;">
+                <label for="return-time">Return Time*</label>
+                <input type="datetime-local" id="return-time" name="return-time">
+
+                <label for="return-destination-search">Return Destination Location*</label>
+                <div style="position: relative;">
+                    <input type="text" id="return-destination-search" name="return-destination-search" placeholder="Search for Return Destination">
+                    <div class="suggestions" id="return-destination-suggestions"></div>
+                </div>
+                <div id="return-destination-map" class="map-container"></div>
+                <input type="hidden" id="return-destination" name="return-destination">
+            </div>
+
+            <!-- Preferences Section -->
+            <div class="preferences">
+                <label for="gender">Preferred Gender*</label>
+                <select id="gender" name="gender" required>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="no_preference">No Preference</option>
+                </select>
+
+                <label for="music">Preferred Music*</label>
+                <select id="music" name="music" required>
+                    <option value="tunisian">Tunisian Music</option>
+                    <option value="international">International Music</option>
+                    <option value="no_preference">No Preference</option>
+                </select>
+
+                <label for="smoking">Smoking Preference*</label>
+                <select id="smoking" name="smoking" required>
+                    <option value="allowed">Allowed</option>
+                    <option value="not_allowed">Not Allowed</option>
+                </select>
+
+                <label for="talkative">Talkative Preference*</label>
+                <select id="talkative" name="talkative" required>
+                    <option value="talkative">Talkative</option>
+                    <option value="quiet">Quiet</option>
+                    <option value="no_preference">No Preference</option>
+                </select>
+
+                <label for="pets">Pets Allowed*</label>
+                <select id="pets" name="pets" required>
+                    <option value="allowed">Allowed</option>
+                    <option value="not_allowed">Not Allowed</option>
+                </select>
+
+                <label for="air_conditioning">Air Conditioning*</label>
+                <select id="air_conditioning" name="air_conditioning" required>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+
+                <label for="children">Children Allowed*</label>
+                <select id="children" name="children" required>
+                    <option value="allowed">Allowed</option>
+                    <option value="not_allowed">Not Allowed</option>
+                </select>
+            </div>
+
+
+
+            <button type="submit">Search Ride</button>
+        </form>
+    </div>
+
+    <script>
+        // Initialize Maps
+        const initializeMap = (id) => {
+            return L.map(id).setView([33.8869, 9.5375], 6); // Tunisia latitude and longitude
+        };
+
+        const addTileLayer = (map) => {
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            }).addTo(map);
+        };
+
+        // Reverse Geocoding function
+        const reverseGeocode = async (lat, lon) => {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&countrycodes=tn`;
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.display_name;  // Returns the full address
+            } catch (error) {
+                console.error("Error in reverse geocoding:", error);
+                return "";
+            }
+        };
+
+        // Initialize location maps for both destinations
+        const destinationMap = initializeMap("destination-map");
+        const departureMap = initializeMap("departure-map");
+        const returnDestinationMap = initializeMap("return-destination-map");
+
+        addTileLayer(destinationMap);
+        addTileLayer(departureMap);
+        addTileLayer(returnDestinationMap);
+
+        // Function to display return trip section
+        const handleTripTypeChange = () => {
+            const tripType = document.getElementById("trip-type").value;
+            const returnTripContainer = document.getElementById("return-trip-container");
+
+            // Show the return trip section if it's a round-trip
+            if (tripType === "two-way") {
+                returnTripContainer.style.display = "block";
+            } else {
+                returnTripContainer.style.display = "none";
+            }
+        };
+
+        // Listen for trip type changes
+        document.getElementById("trip-type").addEventListener("change", handleTripTypeChange);
+
+        // Set initial state based on selected trip type
+        handleTripTypeChange();
+
+        // Set location on map for both destinations
+        const setLocationOnMap = (map, inputId, hiddenInputId) => {
+            let marker;
+        
+            map.on('click', async (e) => {
+                const { lat, lng } = e.latlng;
+
+                // Reverse geocode to get the location name
+                const address = await reverseGeocode(lat, lng);
+                
+                // Set the address in the input field
+                document.getElementById(inputId).value = address;
+
+                // Set the hidden input value with lat/lng
+                document.getElementById(hiddenInputId).value = `${lat},${lng}`;
+
+                // Place a marker on the clicked location
+                if (marker) map.removeLayer(marker);
+                marker = L.marker([lat, lng]).addTo(map);
+                map.setView([lat, lng], 13);
+            });
+        };
+
+        // Set location functionality for both destination and return destination
+        setLocationOnMap(destinationMap, "destination-search", "destination");
+        setLocationOnMap(departureMap, "departure-search", "departure");
+        setLocationOnMap(returnDestinationMap, "return-destination-search", "return-destination");
+
+    </script>  
+</body>
+</html>

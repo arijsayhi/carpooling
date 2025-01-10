@@ -1,0 +1,8 @@
+version: '3'
+services:
+  web:
+    build: .                  # Build the image from the Dockerfile in the current directory
+    ports:
+      - "5001:5000"           # Map port 5000 on the host to port 5000 on the container
+    volumes:
+      - .:/app                 # Mount the current directory to /app in the container
