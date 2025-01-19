@@ -1009,4 +1009,5 @@ if __name__ == '__main__':
         # Ensure database is initialized
         db.create_all()
     
-    app.run(debug=True, port=5001)
+    # Run the app on all network interfaces (0.0.0.0) and on port 5001
+    app.run(debug=True, host='0.0.0.0', port=5001)
